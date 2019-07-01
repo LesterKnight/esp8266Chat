@@ -6,11 +6,10 @@ struct msg {
   char  nome[200];
   char  mensagem[200];
   int msgId;
-  msg * next;
+  msg * next = NULL;
 };
-
-struct msg * msgList;
-struct msg * beginOfList;
+struct msg * msgList = NULL;
+struct msg * beginOfList = NULL;
 // Replace with your network credentials
 const char * ssid = "GVT-77E3";
 const char * password = "S1EB045641";
@@ -31,10 +30,10 @@ void receiveMsg() {
     ptr->msgId = qtd;
     String n = String(ptr->nome);
     String m = String(ptr->mensagem);
-    Serial.print("mensagem recebida e armazenada como inicio da fila\n" + n + " " + m +"\n");
-    msgList = ptr;
+    Serial.print("mensagem recebida e armazenada como inicio da lista\n" + n + " " + m +"\n");
     beginOfList = ptr;
-    
+    msgList = ptr;
+    ptr->next = NULL;
   } else {
     msgList-> next = (struct msg * ) malloc(sizeof(struct msg));
     msgList = msgList-> next;
@@ -44,35 +43,34 @@ void receiveMsg() {
     String m = String(msgList->mensagem);
     qtd++;
     msgList->msgId = qtd;
-    Serial.print("mensagem recebida e adicionada a fila\n" + n + " " + m +"\n");
-    Serial.print(qtd);
+    msgList->next = NULL;
+    String statusString = "mensagem recebida e adicionada a lista\n" + n + " " + m +"\n";
+    Serial.print(statusString);
   }
-  server.send(200, "text/plain", "success");
-  msgJson();
+  server.send(200, "text/plain", "Mensagem recebida");
 }
 
 String writeHTMLPage() {
   return "<!DOCTYPE html><htm><head><title>teste</title></head><body><h1>Title</h1></body></hmtl>";
 }
-
-void msgJson(){
-const int capacity = JSON_OBJECT_SIZE(3);
-StaticJsonDocument<capacity> doc;
-StaticJsonDocument<capacity> doc1;
-StaticJsonDocument<capacity> doc2;
-JsonArray arr = doc.to<JsonArray>();
-
-String n = String(msgList->nome);
-String m = String(msgList->mensagem);
-
-doc1["name"] = n;
-doc1["content"] = m;
-doc1["n"] = msgList->msgId;
-
-char output[128];
-serializeJson(doc, output);
-Serial.print(output);
+String msgJson(){
+  String msgString = "[";
+  struct msg * myList = beginOfList;
+  if(myList==NULL)
+  return "[]";
+  else
+  do{
+    String o = String(myList->nome);
+    String p = String(myList->mensagem);
+    msgString+="{\"name\":\""+o+"\",\"content\":\""+p+"\"}";
+    myList = myList->next;
+    if(myList!=NULL)
+      msgString+=",";
+    else  msgString+="]";
+  }while(myList!=NULL);
+  return msgString;
 }
+ 
   
 void setup() {
   Serial.begin(115200);
@@ -88,6 +86,11 @@ void setup() {
     [] {
       server.send(200, "text/html", writeHTMLPage());
     });
+  server.on("/msgList",
+    [] {
+      server.send(200, "application/json", msgJson());
+    });
+    
   server.on("/msg",receiveMsg);
 
   server.begin();
