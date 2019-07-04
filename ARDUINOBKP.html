@@ -66,12 +66,15 @@ body{
 	margin-top: 15pt;
 }
 .fromStranger{
-	border-top-right-radius: 0;
-	float: right;
-	background-color: rgb(0,128,128);
+	border-top-left-radius: 0;
+	float: left;
+	background-color: rgba(128,128,128);
 	padding: 10px 25px 10px 25px;
 	max-width: 700pt;
 	margin-top: 15pt;
+	overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
 }
 
 .lineFromMe{
@@ -84,7 +87,6 @@ body{
 }
 .lineFromStranger{
 	display: block;
-	overflow: auto;
 	width: 100%;
 	margin-top:20px;
 	word-wrap: break-word;
@@ -102,6 +104,7 @@ myName = prompt("Please enter your name");
 myName+="#"+Math.floor(Math.random() * 9999);
 alert(myName + " entrou no chat");
 msgArray = [];
+
 function imprimirMensagem(arg) {
 	main = document.getElementById("maindiv");
 	line = document.createElement("div");
@@ -118,35 +121,27 @@ function imprimirMensagem(arg) {
 	content.innerHTML = arg.content;
 	line.appendChild(content);
 }
-function msgExists(msg){
-	a = false;
-	msgArray.forEach(
-		function(item){
-			if(item.name == msg.name && item.content == msg.content)
-				a = true;
-		});
-	return a;
-}
+
 function getMensagens() {
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.open("GET", "/msgList", true);
-	xmlhttp.onreadystatechange = function(){
-	if (xmlhttp.readyState == XMLHttpRequest.DONE) {
-		if (xmlhttp.status == 200) {
-			msgs = JSON.parse(xmlhttp.responseText);
-			msgs.forEach(function(item) {
-				if(!msgExists(item)){
-					msgArray.push(item);
-					imprimirMensagem(item);
-				}
-			});
-			}
-	}
-}
+	xmlhttp.onreadystatechange = function() {
+		if (xmlhttp.readyState == XMLHttpRequest.DONE) { 
+			if (xmlhttp.status == 200) {
+				msgs = JSON.parse(xmlhttp.responseText);
+				msgs.forEach(function(item) {
+					if (!msgArray.includes(item)) {
+						msgArray.push(item);
+						imprimirMensagem(item);
+					}
+				});
+			} 
+		}
+	};
+
 	xmlhttp.setRequestHeader("Content-Type", "application/json");
 	xmlhttp.send();
 }
-
 
 
 
@@ -179,5 +174,6 @@ function sendMessage() {
 }
 function myFunction(){
 document.getElementById("btn").onclick = function(){sendMessage();};
+setInterval(function(){ getMensagens(); }, 1000);
 }
 </script>
