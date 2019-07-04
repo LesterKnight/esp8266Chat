@@ -5,9 +5,7 @@
     <title>aa</title>
 
   </head>
-  <body>
-  
-    <h1>aa</h1>
+  <body onload="myFunction()">
 	<div id="maindiv">
 		
 	</div>
@@ -26,7 +24,7 @@ body{
 	display: block;
 	position: relative;
 	width: 100%;
-	height: 50vh;
+	height: 80vh;
 	background-color:rgba(0,0,0,0.05);
 	overflow: auto;
 }
@@ -99,61 +97,83 @@ body{
 
 
 <script type="text/javascript">
+myName = "";
+do{
+myName = prompt("Please enter your name");
+}while(myName=="");
+myName+="#"+Math.floor(Math.random() * 9999);
+alert(myName + " entrou no chat");
+msgArray = [];
 
-
-
-function imprimirMensagens(arg){
-    myName = "Cristiano";
+function imprimirMensagem(arg) {
 	main = document.getElementById("maindiv");
-	var line = document.createElement("div");
-	if(arg.name==myName)
-	line.setAttribute("class", "lineFromMe");
+	line = document.createElement("div");
+	if (arg.name == myName)
+		line.setAttribute("class", "lineFromMe");
 	else
-	line.setAttribute("class", "lineFromStranger");
+		line.setAttribute("class", "lineFromStranger");
 	main.appendChild(line);
-	var content = document.createElement("div");
-	if(arg.name==myName)
-	content.setAttribute("class", "msg fromMe");
+	content = document.createElement("div");
+	if (arg.name == myName)
+		content.setAttribute("class", "msg fromMe");
 	else
-	content.setAttribute("class", "msg fromStranger");
+		content.setAttribute("class", "msg fromStranger");
 	content.innerHTML = arg.content;
 	line.appendChild(content);
 }
-msgs = "[{\"name\": \"xuxunenem\",\"content\": \"Reference sitesitesitesitesitesitesitesitesit esitesitesitesitesitesitesitesite about Lorem Ipsum, as well as a random Lipsum generator.\"},{\"name\": \"Cristiano\",\"content\": \"Reference site about Lorem Ipsum, giving information on its origins, as well as a random Lipsum generator.\"}]";
-obj = JSON.parse(msgs);
-obj.forEach(imprimirMensagens);
 
+function getMensagens() {
+	xmlhttp = new XMLHttpRequest();
+	xmlhttp.open("GET", "/msgList", true);
+	xmlhttp.onreadystatechange = function() {
+		if (xmlhttp.readyState == XMLHttpRequest.DONE) { // XMLHttpRequest.DONE == 4
+			if (xmlhttp.status == 200) {
+				msgs = JSON.parse(xmlhttp.responseText);
+				msgs.forEach(function(item) {
+					if (!msgArray.includes(item)) {
+						msgArray.push(item);
+						imprimirMensagem(arg);
+					}
+				});
+			} 
+		}
+	};
 
-
+	xmlhttp.setRequestHeader("Content-Type", "application/json");
+	xmlhttp.send();
+}
 
 
 
 function sendMessage() {
+	inputContent = document.getElementById("inpute").value;
+	if (inputContent != "") {
+		document.getElementById("inpute").value = "";
+		xmlhttp = new XMLHttpRequest();
+		xmlhttp.open("POST", "/msg", true);
+		xmlhttp.setRequestHeader("Content-Type", "application/json");
+		xmlhttp.onreadystatechange = function() {
+			if (xmlhttp.readyState == XMLHttpRequest.DONE) { // XMLHttpRequest.DONE == 4
+				if (xmlhttp.status == 200) {
+					document.getElementById("inpute").value = "";
+					//document.getElementById("maindiv").innerHTML = xmlhttp.responseText;
+				} else if (xmlhttp.status == 400) {
+					alert('There was an error 400');
+				} else {
+					alert('something else other than 200 was returned');
+				}
+			}
+		};
 
-
-    var xmlhttp = new XMLHttpRequest();
-
-    xmlhttp.onreadystatechange = function() {
-        if (xmlhttp.readyState == XMLHttpRequest.DONE) {   // XMLHttpRequest.DONE == 4
-           if (xmlhttp.status == 200) {
-               //document.getElementById("maindiv").innerHTML = xmlhttp.responseText;
-           }
-           else if (xmlhttp.status == 400) {
-              alert('There was an error 400');
-           }
-           else {
-               alert('something else other than 200 was returned');
-           }
-        }
-    };
-
-	var json_upload = "json_name=" + JSON.stringify({name:"John Rambo", time:"2pm"});
-	xmlhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-    xmlhttp.open("POST", "http://192.168.25.4/msg", true);
-	xmlhttp.send(json_upload);
-	
-	
-	
+		json_upload = JSON.stringify({
+			name: myName,
+			content: inputContent
+		});
+		xmlhttp.send(json_upload);
+	}
 }
-
+function myFunction(){
+document.getElementById("btn").onclick = function(){sendMessage();};
+setInterval(function(){ getMensagens(); }, 1000);
+}
 </script>
